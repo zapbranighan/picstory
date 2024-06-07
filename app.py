@@ -72,8 +72,14 @@ def main():
     st.set_page_config(page_title="Image to Story", page_icon="📖")
     st.title("Picstory")
     st.header("Turn an image into a short audio story")
+
+    with st.sidebar:
+        open_ai_key = st.text_input("Enter your OpenAI API key", type="password")
     
-    open_ai_key = "sk-proj-NGqCNDPPpA3iIjHP5s9FT3BlbkFJM6efNjhzZHAj6G5I1Rzx"
+    if not open_ai_key:
+        st.error("Please enter your OpenAI API key")
+        return
+    
     uploaded_image = st.file_uploader("Choose an image", type=["png", "jpg", "jpeg"])
     if uploaded_image is not None:
         img = uploaded_image.getvalue()
