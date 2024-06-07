@@ -1,9 +1,13 @@
 from openai import OpenAI
 from pathlib import Path
+from dotenv import load_dotenv
 
 import base64
-import requests
+import os
 import streamlit as st
+
+load_dotenv()
+open_ai_key = os.getenv("OPENAI_API_KEY")
 
 # Image to text with OpenAI
 def image_to_text(image_path: Path, open_ai_key: str) -> str:
@@ -72,13 +76,6 @@ def main():
     st.set_page_config(page_title="Image to Story", page_icon="📖")
     st.title("Picstory")
     st.header("Turn an image into a short audio story")
-
-    with st.sidebar:
-        open_ai_key = st.text_input("Enter your OpenAI API key", type="password")
-    
-    if not open_ai_key:
-        st.error("Please enter your OpenAI API key")
-        return
     
     uploaded_image = st.file_uploader("Choose an image", type=["png", "jpg", "jpeg"])
     if uploaded_image is not None:
