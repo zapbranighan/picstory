@@ -6,7 +6,7 @@ import os
 import streamlit as st
 
 
-def image_to_text(image_path: Path, open_ai_key: str) -> str:
+def image_to_text(image_buffer: bytes, open_ai_key: str) -> str:
     """
     Converts an image to text using OpenAI's GPT-4o model.
 
@@ -25,9 +25,7 @@ def image_to_text(image_path: Path, open_ai_key: str) -> str:
         >>> image_to_text(Path("image.png"), "your_open_ai_key")
         "A cat is sleeping on a couch."
     """
-    with open(image_path, "rb") as image_file:
-        image_base64 = base64.b64encode(image_file.read()).decode("utf-8")
-    
+    image_base64 = base64.b64encode(image_buffer).decode("utf-8")
     client = OpenAI(api_key=open_ai_key)
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -91,7 +89,7 @@ def generate_story(scenario: str, open_ai_key: str) -> str:
     return story
 
 
-def story_to_speech(story: str, open_ai_key: str) -> Path:
+def story_to_speech(story: str, open_ai_key: str) -> bytes:
     """
     Convert a given story into speech audio using OpenAI's text-to-speech model.
 
@@ -100,27 +98,20 @@ def story_to_speech(story: str, open_ai_key: str) -> Path:
         open_ai_key (str): The API key for accessing OpenAI's text-to-speech model.
 
     Returns:
-        Path: The path to the generated speech audio file.
+        speech (bytes): The generated speech audio in bytes format.
 
     Raises:
         None
-
-    Example:
-        >>> story = "Once upon a time, there was a cat named Fluffy."
-        >>> open_ai_key = "your_open_ai_key"
-        >>> story_to_speech(story, open_ai_key)
-        Path('/path/to/audio/story.mp3')
     """
     client = OpenAI(api_key=open_ai_key)
-    speech_file_path = Path(__file__).parent / "audio" / "story.mp3"
     with client.audio.speech.with_streaming_response.create(
         model="tts-1",
         voice="alloy",
         input=story
     ) as response:
-        response.stream_to_file(speech_file_path)
+        result = b''.join(response.iter_bytes())
 
-    return speech_file_path
+    return result
 
 
 def main():
@@ -168,15 +159,10 @@ def main():
     
     uploaded_image = st.file_uploader("Choose an image", type=["png", "jpg", "jpeg"])
     if uploaded_image is not None:
-        img = uploaded_image.getvalue()
-        upload_path = Path(__file__).parent / "images" / uploaded_image.name
-        with open(upload_path, "wb") as f:
-            f.write(img)
-
         st.image(uploaded_image, caption="Uploaded Image", use_column_width=True)
 
         with st.spinner("Processing image..."):
-            scenario = image_to_text(upload_path, open_ai_key)
+            scenario = image_to_text(uploaded_image.getvalue(), open_ai_key)
         
         with st.expander("Scenario"):
             st.write(scenario)
@@ -188,9 +174,10 @@ def main():
             st.write(story)
 
         with st.spinner("Generating audio..."):
-            speech_file_path = story_to_speech(story, open_ai_key)
+            speech = story_to_speech(story, open_ai_key)
 
-        st.audio(str(speech_file_path), format="audio/mp3", autoplay=True)
+        with st.expander("Audio"):    
+            st.audio(speech, format="audio/mp3", autoplay=True)
 
 
 if __name__ == "__main__":
