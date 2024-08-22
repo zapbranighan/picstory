@@ -177,7 +177,7 @@ def main():
             speech = story_to_speech(story, open_ai_key)
 
         with st.expander("Audio"):    
-            st.audio(speech, format="audio/mp3", autoplay=True)
+            st.audio(speech, format="audio/mpeg", autoplay=True)
 
 
 if __name__ == "__main__":
